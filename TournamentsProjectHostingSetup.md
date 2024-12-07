@@ -171,4 +171,84 @@ Output:
 <br>
 ![](./assets//Ocron5.png)
 
+## Step 5: WebSocket setup
+
+1. First, you will need to copy the path of your SSL certificates. You can find them under: `/usr/local/hestia/data/users/admin/ssl/domainname.com.crt` and `/usr/local/hestia/data/users/admin/ssl/domainname.com.key`
+
+2. Navigate under the project directory and run `vim ws.php`
+
+3. Edit the ws.php as shown below. Don't forget to change the certificates paths
+
+```<?php
+
+use Ratchet\MessageComponentInterface;
+use Ratchet\ConnectionInterface;
+use Ratchet\Server\IoServer;
+use Ratchet\Http\HttpServer;
+use Ratchet\WebSocket\WsServer;
+use React\Socket\Server as ReactServer;
+use React\Socket\SecureServer;
+
+require __DIR__ . '/vendor/autoload.php';
+
+class WebSocketsServer implements MessageComponentInterface {
+    protected $clients;
+    public function __construct() {
+        $this->clients = new \SplObjectStorage;
+    }
+    public function onOpen(ConnectionInterface $conn) {
+        $this->clients->attach($conn);
+        echo "New connection! ({$conn->resourceId})\n";
+    }
+    public function onMessage(ConnectionInterface $from, $msg) {
+        foreach ($this->clients as $client) {
+            if ($from !== $client) {
+                $client->send($msg);
+            }
+        }
+    }
+    public function onClose(ConnectionInterface $conn) {
+        $this->clients->detach($conn);
+        echo "Connection {$conn->resourceId} has disconnected\n";
+    }
+    public function onError(ConnectionInterface $conn, \Exception $e) {
+        echo "An error has occurred: {$e->getMessage()}\n";
+        $conn->close();
+    }
+}
+
+$cert = '/usr/local/hestia/data/users/admin/ssl/yourDomainName.com.crt';
+$key = '/usr/local/hestia/data/users/admin/ssl/yourDomainName.com.key';
+
+$loop = React\EventLoop\Factory::create();
+$socket = new ReactServer('0.0.0.0:8091', $loop);
+
+$secureSocket = new SecureServer($socket, $loop, [
+    'local_cert' => $cert,
+    'local_pk' => $key,
+    'allow_self_signed' => true,  //Set to false in production
+    'verify_peer' => false,       //Set to true in production
+]);
+
+$wsServer = new HttpServer(
+    new WsServer(
+        new WebSocketsServer()
+    )
+);
+
+$server = new Ratchet\Server\IoServer($wsServer, $secureSocket, $loop);
+echo "Secure WebSocket server running on wss://localhost:8091\n";
+$address = $secureSocket->getAddress();
+```
+
+4. The script above, runs a websocket under the 8091 port by default the hosting already has some ports that receive TCP Requests, however, if we want to add custom ports we will need to configure the firewall with the following command: `ufw allow 8091/tcp`.
+
+5. Now we will need to run the ws.php using **tmux**, in order to do that, we will need to install tmux, run `apt install tmux`.
+
+6. Now initialize **tmux** run: `tmux`, now this will create a new instance of a virtual terminal.
+
+7. Make sure you are under the correct directory (wherever ws.php is located). Run:  `php ws.php run`
+
+8. Now we have to detach our terminal to the virtual instance (the websocket will continue running). In order to do that you will need to press: `Ctrl-b + d`
+
 ## Congrats! you have successfully set up the project.

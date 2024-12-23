@@ -172,7 +172,12 @@ Output:
 ![](./assets//Ocron5.png)
 
 ## Step 5: WebSocket setup
+    
+ #### Context: 
+ Locally, setting up the WebSocket is straightforward; it simply involves running the WebSocket server, and the brackets pop-up feature (which relies on WebSocket) renders the information seamlessly. However, in a production environment where we are deploying to a remote server, the domain must use HTTPS instead of HTTP to provide users with a secure and reliable experience. Since the brackets pop-up feature depends on WebSocket communication and the domain uses HTTPS, the WebSocket connection must also be secure (`wss` instead of `ws`) to establish bidirectional communication.
 
+To enable this, we need to configure SSL for the server.
+ 
  You will need to setup SSL certificates, by default **HestiaCP** provides a *Let's Encrypt to obtain SSL certificate* option, this SSL certificate is already **Authenticated** this will help us to make our domain secure.
 
  1. Go back to **HestiaCP** and under *WEB* click **edit** domain
@@ -317,7 +322,8 @@ COMMIT
 ### In this section we will use resources like `systemd` in order to make the Operating System to always run some scripts to make websocket run.
 #### It is important to mention what the main script does: It kills ALL processes running on port 8092, usually there shouulnd't be any, but once a port is opened and allowed in our firewall, the Operating System will always try to occupy it. After it kills all processes, it runs the websocket (which we configured before) and sets up the responsible user as root.
 
-1. Theoretically we should need to setup the *iptables.rules* file but since we did it in the sixth step from last section we should be okay (if you haven't, just follow the 4, 5 and 6 steps from last section).
+1. **Iptables setup:** If the iptables.rules file is not yet set up or you are unsure, refer to Steps 4, 5, and 6 from the previous section to complete its configuration.
+#### Note: **You do not need to set up the iptables.rules file again if you completed  Step 6 of the previous section.**
 
 2. Now, we will need to create a *.service* file under the **system** direcrotry, in order to do that run: `cd /etc/systemd/system && vim ws-server.service` this command will navigate to the **system** directory and create (or overwrite) a file named **ws-server.service**. 
 

@@ -145,6 +145,24 @@ Output:
 
 25. Now link upload directory `ln -s /path/to/your/codeigniter/writable/uploads /path/to/your/public_html/`
 
+-We will now need to update the uploads structure a little.
+
+26. Navigate to uploads `cd uploads`
+
+27. Run the following command:
+```
+mkdir audios
+mkdir audios/local
+mkdir audios/url
+mkdir videos
+mkdir videos/local
+mkdir videos/url
+mkdir images
+mkdir images/participants
+mkdir CSV
+mkdir CSV/UserLocal
+```
+
 -Finally, the only missing thing is setting up cronjob
 
 26. Navigate to your project `cd project/`
@@ -198,7 +216,8 @@ To enable this, we need to configure SSL for the server.
 
 3. Edit the ws.php as shown below. Don't forget to change the certificates paths
 
-```<?php
+```
+<?php
 
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;

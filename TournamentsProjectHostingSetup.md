@@ -109,6 +109,12 @@ Output:
 
 13. Save and exit **vim** editor
 
+13. Before running spark, we will need to setup kint. run `composer remove kint-php/kint && composer require kint-php/kint:^5.0 --dev`
+
+13. Now, run `vim vendor/kint-php/kint/src/Renderer/RichRenderer.php`
+
+13. Then change the following line: `public $richSort = Renderer::SORT_FULL;` to `public $richSort = RichRenderer::SORT_FULL;`
+
 14. To migrate project database run `php spark shield:setup` you will be asked to overwrite type `n` when asked, then you will be ask to `Run spark migrate --all now?` type `y`
 <br>
 ![](./assets//Ospark1.png)
@@ -131,19 +137,19 @@ Output:
 
 20. Save and exit **vim** editor
 
--Now we need to give some permissions to writable folder. 
-
-21. Navigate to writable `cd /project/writable`
-
-22. Give permissions to the whole writable folder `sudo chmod -R 777 .`
-
 -Now we will link writable/uploads to public_html/uploads
 
-23. Navigate to uploads `cd uploads`, run `pwd` and save that path.
+23. Navigate to uploads `cd ci_tournament_bracket-generator/writable/uploads`, run `pwd` and save that path.
 
 24. Navigate to public_html `cd ../../..`
 
 25. Now link upload directory `ln -s /path/to/your/codeigniter/writable/uploads /path/to/your/public_html/`
+
+-Now we need to give some permissions to writable folder. 
+
+21. Navigate to writable `cd /project/writable`
+
+22. Give permissions to the whole writable folder `sudo chmod -R 0777 .`
 
 -We will now need to update the uploads structure a little.
 
@@ -165,7 +171,38 @@ mkdir CSV/UserLocal
 
 -Finally, the only missing thing is setting up cronjob
 
-26. Navigate to your project `cd project/`
+26. Type `crontab -e` you will open a crontab config file with vim.
+
+27. Copy and paste the following cronjob ```* * * * * /usr/bin/php /home/admin/web/tourneyforge.com/public_html/ci_tournament_bracket-generator/spark task:run >> /home/admin/web/tourneyforge.com/public_html/ci_tournament_bracket-generator/cronjob.log 2>&1```
+
+28. Make sure to save and exit, the script above.
+
+### What It Does
+
+-This cron job runs a PHP script to generate and update tournament brackets automatically, making sure everything stays up to date without manual input.
+
+### How Often It Runs
+
+-It runs every minute, so updates happen in real-time.
+
+### How It Works
+	•	Executes the PHP script at:
+/home/admin/web/tourneyforge.com/public_html/ci_tournament_bracket-generator/spark task:run
+	•	Logs all output and errors to:
+/home/admin/web/tourneyforge.com/public_html/ci_tournament_bracket-generator/cronjob.log
+
+### Why the Logging?
+
+All output and errors get saved in cronjob.log, making it easy to track what’s happening and troubleshoot if needed.
+
+### Command explanation: 
+
+	•	* * * * * → Runs every minute
+	•	/usr/bin/php → Runs the script using PHP
+	•	spark task:run → Calls a task in CodeIgniter
+	•	>> cronjob.log 2>&1 → Saves both output and errors to the log file
+
+<!--26. Navigate to your project `cd project/`
 
 27. Run `pwd` and save project's full path
 
@@ -188,7 +225,7 @@ mkdir CSV/UserLocal
 30. Click **save**
 <br>
 ![](./assets//Ocron5.png)
-
+-->
 ## Step 5: WebSocket setup
     
  #### Context: 
@@ -255,8 +292,8 @@ class WebSocketsServer implements MessageComponentInterface {
     }
 }
 
-$cert = '/usr/local/hestia/data/users/admin/ssl/yourDomainName.com.crt';
-$key = '/usr/local/hestia/data/users/admin/ssl/yourDomainName.com.key';
+$cert = '/usr/local/hestia/data/users/admin/ssl/tourneyforge.com.crt';
+$key = '/usr/local/hestia/data/users/admin/ssl/tourneyforge.com.key';
 
 $loop = React\EventLoop\Factory::create();
 $socket = new ReactServer('0.0.0.0:8092', $loop);
@@ -370,5 +407,201 @@ WantedBy=multi-user.target
 5. Then, we will need to restart the service we just created so we will run `systemctl restart ws-server`.
 
 6. Now you are done, the websocket will always be running even if you reboot, it should be a good practice to reboot now just to verify if everything is working as expected. Run `reboot` (it can take up to 10 minutes).
+
+## Step 7: Ffmpeg and yt-dlp to reproduce URL multimedia 
+
+### In this section we install Ffmpeg and yt-dlp and youtube web cookies in order to reproduce URL multimedia
+
+1. Update packages list (as a good practice) `sudo apt update` 
+
+2. Install Ffmpeg `sudo apt install ffmpeg`
+<br>
+![](./assets//Yesffmpeg.png)
+
+3. Type `Y` and then wait, you will have ffmpeg downloaded.
+
+4. Check if it was correctly installed `ffmpeg -version`, Output:
+<br>
+![](./assets//FfmpegVersion.png)
+
+2. Install yt-dlp `sudo apt install yt-dlp`
+<br>
+![](./assets//YesYtdlp.png)
+
+3. Type `Y` and then wait, you will have yt-dlp downloaded.
+
+4. Check if it was correctly installed `yt-dlp --version`, Output:
+<br>
+![](./assets//YtdlpVersion.png)
+
+### Cookies section:
+#### In this section you will learn how to copy cookies from any website (Using Chrome)
+
+5. First, open Google Chrome.
+<br>
+![](./assets//GoogleChrome.png)
+
+6. Now, copy and paste into the box shown in the image, the following URL: *https://chromewebstore.google.com/detail/editthiscookie/jpdpholcdjghlginfdaphhefdonkmohg*
+<br>
+![](./assets//URLGoogle.png)
+
+7. After being redirected into Chrome web store, click on "Add to Chrome"
+<br>
+![](./assets//AddToChrome.png)
+
+8. Click on the icon at the top right of the window:
+<br>
+![](./assets//ClickIcon.png)
+
+9. Click the pin icon (which will have the Cookies extension pinned at the top right of our browser)
+<br>
+![](./assets//PinIcon.png)
+
+-Now we will need to export the cookies in a certain format that will allow our code to use them
+
+10. Click on the Cookie icon.
+<br>
+![](./assets//CookieIcon.png)
+
+11. Click on the Options icon.
+<br>
+![](./assets//OptionsIcon.png)
+
+12. You will be redirected to the extension's support page. Click **options**
+<br>
+![](./assets//Options.png)
+
+13. Now, you will  choose a different export format (it's json by default). Click on the box shown below
+<br>
+![](./assets//NewFormat.png)
+
+14. Now click on the format shown in the **following image**  (Netscape HTTP Cookie file)
+<br>
+![](./assets//HTTP.png)
+
+15. You can now ope a new tab and go to the following link, by clicking on it or copy and paste it into your browser *https://www.youtube.com/?app=desktop&hl=en*
+<br>
+![](./assets//URLGoogle.png)
+
+16. Once on Youtube, click the **cookie icon** at the **top right** of the screen
+<br>
+![](./assets//ytCookie.png)
+
+17. Then, click on Export. You will get the following message - *Cookies copied to clipboard*
+<br>
+![](./assets//ExportCookies.png)
+
+18. Save the Cookies wherever you want as **www.youtube.com_cookiestxt**.
+
+19. Save that path for later use.
+### End of Cookies section
+
+20. Go back to your ssh terminal, we will be editing two files into the project, the first one is UploadConfig.php which is under: ci_tournamet_bracket-generator/app/Config/UploadConfig.php
+
+21. Navigate to `cd yourProjectpath/app/Config/`
+
+22. Type this command `which ffmpeg && which yt-dlp`, that will output both ffmpeg and yt-dlp paths. That will help us for next steps. **Note: both paths should normally be the same**
+
+23. Open UploadConfig.php `vim UploadConfig.php`, make sure to edit the ffmpegPath and cookiesPath, to yours.
+
+```
+<?php
+
+namespace Config;
+
+use CodeIgniter\Config\BaseConfig;
+
+class UploadConfig extends BaseConfig
+{
+    public $localAudioUploadPath = 'audios/local/';
+    public $urlAudioUploadPath = 'audios/url/';
+    public $localVideoUploadPath = 'videos/local/';
+    public $urlVideoUploadPath = 'videos/url/';
+    public $descriptionImagesUploadPath = 'images/description/';
+    public $participantImagesUploadPath = 'images/participants/';
+    public $csvUploadPath = 'CSV/UserLocal/';
+    public $ffmpegPath = '/usr/local/bin/';
+}
+```
+
+- Development was meant for a windows server, which means some of the paths written into the code shouldn't be the same as a ubuntu server. that is why we will modify the **process** function under TournamentController.php. (ci_tournamet_bracket-generator/app/Controllers/Api/TournamentController.php.php)
+
+24. Type: `cd ..`
+
+25. Navigate to the path: `cd Controllers/Api/`
+
+26. Open the file we want to edit: `vim TournamentController.php`
+
+27. Look for the **process** function and modify it with the following updated version of it: 
+
+```
+   public function process($youtubeLink, $type = 'audio')
+    {
+        $uploadConfig = new UploadConfig();
+
+        parse_str( parse_url( $youtubeLink, PHP_URL_QUERY ), $vars );
+
+        if (isset($vars['v'])) {
+            $video_id = $vars['v'];
+        }
+
+        if (isset($vars['si'])) {
+            $video_id = $vars['si'];
+        }
+
+        $yt = new YoutubeDl();
+        $yt->setBinPath($uploadConfig->ffmpegPath . 'yt-dlp');
+        if ($type == 'audio') {
+            if (file_exists(WRITEPATH . "uploads/$uploadConfig->urlAudioUploadPath/" . $video_id . '.mp3')) {
+                return $video_id . '.mp3';
+            }
+
+            $collection = $yt->download(
+                Options::create()
+                    ->downloadPath(WRITEPATH . "uploads/$uploadConfig->urlAudioUploadPath")
+                    ->extractAudio(true)
+                    ->audioFormat('mp3')
+                    ->audioQuality('0') // best
+                    ->output($video_id)
+                    ->url($youtubeLink)
+                    ->cookies($uploadConfig->ffmpegPath . 'cookies.txt')
+            );
+
+            $filetype = '.mp3';
+        } else {
+            if (file_exists(WRITEPATH . "uploads/$uploadConfig->urlVideoUploadPath/" . $video_id . '.mp4')) {
+                return $video_id . '.mp4';
+            }
+
+            $collection = $yt->download(
+                Options::create()
+                    ->downloadPath(WRITEPATH . "uploads/$uploadConfig->urlVideoUploadPath")
+                    ->format('mp4')
+                    ->output($video_id . '.mp4')
+                    ->url($youtubeLink)
+                    ->cookies($uploadConfig->ffmpegPath . 'cookies.txt')
+            );
+
+            $filetype = '.mp4';
+        }
+
+        foreach ($collection->getVideos() as $video) {
+            if ($video->getError() !== null) {
+                echo "Error downloading video: {$video->getError()}.";
+                log_message('debug', $video->getError());
+            }
+        }
+
+        return $video_id . $filetype;
+    }
+```
+
+#### Change notes:
+
+- We replaced ```$yt->setBinPath($uploadConfig->ffmpegPath . 'bin\yt-dlp.exe');``` to ```$yt->setBinPath($uploadConfig->ffmpegPath . 'yt-dlp');``` That's because we needed to set that command for a Ubuntu OS so there is no .exe file for yt-dlp. Also made a little change to the path command (since we also changed the paths a few steps before)
+
+- We changed ```->cookies($uploadConfig->ffmpegPath . 'www.youtube.com_cookies.txt')``` to ```->cookies($uploadConfig->ffmpegPath . 'cookies.txt')``` I just wanted name to be shorter lol
+
+**Changes weren't as significant but since you are using vim and changing a specific function is just easier for you to replace the whole function by copying and pasting.**
 
 ## Congrats! you have successfully set up the project.
